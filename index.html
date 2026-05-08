@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>商品展示目錄</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#9333ea">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+        /* 鵝黃色為主色調 */
+        body { padding-bottom: 80px; background-color: #FFF9E1; } 
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+
+        <div class="sticky top-0 bg-[#FFF9E1]/95 backdrop-blur-md z-50 pt-4 border-b border-yellow-200">
+            <h1 class="text-xl font-bold text-center text-gray-800 mb-2">{{ currentTitle }}</h1>
+            <div class="px-4 pb-4">
+                <div class="relative mb-3">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋名稱、品牌..." 
+                           class="w-full bg-white border border-yellow-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm">
+                    <span class="absolute left-3 top-3 text-gray-300">🔍</span>
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                    <button @click="selectedBrand = ''" 
+                            :class="selectedBrand === '' ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
+                            class="px-4 py-1.5 rounded-full text-xs font-bold shadow-sm border border-purple-100 whitespace-nowrap transition-all">
+                        全部
+                    </button>
+                    <button v-for="brand in brands" @click="selectedBrand = brand"
+                            :class="selectedBrand === brand ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
+                            class="px-4 py-1.5 rounded-full text-xs font-bold shadow-sm border border-purple-100 whitespace-nowrap transition-all">
+                        {{ brand }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="loading" class="flex-1 flex flex-col items-center justify-center py-20 text-purple-500">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+            <p class="text-sm font-medium">1,000+ 商品同步中...</p>
+        </div>
+
+        <div class="p-3 grid grid-cols-2 gap-3">
+            <div v-for="item in pagedProducts" :key="item.id" 
+                 class="bg-white rounded-2xl overflow-hidden border border-yellow-100 shadow-sm transition-all active:scale-95">
+                
+                <div class="relative aspect-square bg-gray-50">
+                    <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-xs z-10 shadow-md">
+                        {{ item.points }}
+                    </div>
+                    <div v-if="item.state === '預購'" class="absolute top-2 right-2 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm z-10">
+                        預購
+                    </div>
+                    <img :src="item.image" class="w-full h-full object-cover" loading="lazy" 
+                         @error="item.image = 'https://via.placeholder.com/300?text=No+Image'">
+                </div>
+
+                <div class="p-3 bg-white">
+                    <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9 leading-tight">
+                        {{ item.name }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div id="scroll-anchor" class="py-10 text-center text-xs text-yellow-600/50 font-medium">
+            <span v-if="pagedProducts.length < filteredProducts.length">滑動顯示更多商品</span>
+            <span v-else-if="!loading">已顯示全部內容</span>
+        </div>
+
+        <div v-if="filteredProducts.length === 0 && !loading" class="flex-1 py-40 text-center">
+            <p class="text-gray-400">目前沒有符合搜尋的商品</p>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-16 shadow-[0_-2px_15px_rgba(0,0,0,0.03)]">
+            <button @click="resetFilters" class="flex flex-col items-center gap-1">
+                <span class="text-xl">🏠</span>
+                <span class="text-[10px] text-purple-600 font-bold">首頁</span>
+            </button>
+            <a href="https://line.me/ti/p/你的LINEID" target="_blank" class="flex flex-col items-center gap-1">
+                <span class="text-xl">💬</span>
+                <span class="text-[10px] text-gray-500 font-bold">詢問老闆</span>
+            </a>
+            <button class="flex flex-col items-center gap-1 opacity-30">
+                <span class="text-xl text-gray-300">⋯</span>
+                <span class="text-[10px] text-gray-300 font-bold">更多的</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const products = ref([]);
+                const loading = ref(true);
+                const searchQuery = ref('');
+                const selectedBrand = ref('');
+                const currentPage = ref(1);
+                const pageSize = 40;
+
+                // 請填入您的 Google Sheets CSV 發佈連結
+                const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=0&single=true&output=csv';
+
+                const fetchData = () => {
+                    Papa.parse(csvUrl, {
+                        download: true,
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (results) => {
+                            // 統一使用全小寫欄位名對應
+                            products.value = results.data.map((row) => ({
+                                id: row.id,
+                                name: row.name,
+                                brand: row.brand,
+                                points: row.points, 
+                                state: row.state,
+                                online: row.online,
+                                image: row.image
+                            })).filter(p => p.name && p.online === '上架'); 
+                            loading.value = false;
+                        }
+                    });
+                };
+
+                const brands = computed(() => {
+                    const b = products.value.map(p => p.brand).filter(x => x);
+                    return [...new Set(b)];
+                });
+
+                const currentTitle = computed(() => selectedBrand.value || '所有商品');
+
+                const filteredProducts = computed(() => {
+                    currentPage.value = 1;
+                    return products.value.filter(p => {
+                        const s = searchQuery.value.toLowerCase();
+                        const mSearch = p.name?.toLowerCase().includes(s) || p.brand?.toLowerCase().includes(s);
+                        const mBrand = selectedBrand.value === '' || p.brand === selectedBrand.value;
+                        return mSearch && mBrand;
+                    });
+                });
+
+                const pagedProducts = computed(() => {
+                    return filteredProducts.value.slice(0, currentPage.value * pageSize);
+                });
+
+                const resetFilters = () => {
+                    searchQuery.value = '';
+                    selectedBrand.value = '';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+
+                onMounted(() => {
+                    fetchData();
+                    const observer = new IntersectionObserver((entries) => {
+                        if (entries[0].isIntersecting && !loading.value) {
+                            if (pagedProducts.value.length < filteredProducts.value.length) {
+                                currentPage.value++;
+                            }
+                        }
+                    });
+                    observer.observe(document.getElementById('scroll-anchor'));
+                });
+
+                return { loading, searchQuery, selectedBrand, brands, filteredProducts, pagedProducts, currentTitle, resetFilters };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

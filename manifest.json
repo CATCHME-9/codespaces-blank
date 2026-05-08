@@ -1,0 +1,21 @@
+{
+  "name": "點數換購商城",
+  "short_name": "點數商城",
+  "description": "1,000件商品即時兌換目錄",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#FFF9E1",
+  "theme_color": "#9333ea",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/9333ea/ffffff?text=SHOP",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512/9333ea/ffffff?text=SHOP",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
