@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>商品展示目錄</title>
+    <title>點數商城 PWA</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#9333ea">
@@ -21,88 +21,138 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-        /* 鵝黃色為主色調 */
-        body { padding-bottom: 80px; background-color: #FFF9E1; } 
+        /* 配色設定 */
+        body { background-color: #FFFFFF; color: #333; font-family: sans-serif; }
+        .bg-cream { background-color: #FFFBEB; } /* 淡鵝黃色 */
+        .text-accent { color: #9333ea; } /* 紫色 */
+        .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-20">
 
-        <div class="sticky top-0 bg-[#FFF9E1]/95 backdrop-blur-md z-50 pt-4 border-b border-yellow-200">
-            <h1 class="text-xl font-bold text-center text-gray-800 mb-2">{{ currentTitle }}</h1>
-            <div class="px-4 pb-4">
+        <div v-if="activeTab !== 'news'" class="sticky top-0 bg-cream/95 backdrop-blur-md z-50 pt-4 border-b border-yellow-100 shadow-sm">
+            <div class="flex justify-between items-center px-5 mb-2">
+                <h1 class="text-xl font-black text-accent tracking-tighter">{{ activeTab === 'home' ? '點數商城' : currentTitle }}</h1>
+                <div class="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-[10px]">MALL</div>
+            </div>
+
+            <div v-if="activeTab === 'products'" class="px-4 pb-4 animate-fadeIn">
                 <div class="relative mb-3">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋名稱、品牌..." 
-                           class="w-full bg-white border border-yellow-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋商品名稱或品牌..." 
+                           class="w-full bg-white border border-yellow-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-sm">
                     <span class="absolute left-3 top-3 text-gray-300">🔍</span>
                 </div>
-                
                 <div class="flex gap-2 overflow-x-auto no-scrollbar">
                     <button @click="selectedBrand = ''" 
                             :class="selectedBrand === '' ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold shadow-sm border border-purple-100 whitespace-nowrap transition-all">
+                            class="px-4 py-1.5 rounded-full text-xs font-bold border border-purple-100 whitespace-nowrap transition-all shadow-sm">
                         全部
                     </button>
                     <button v-for="brand in brands" @click="selectedBrand = brand"
                             :class="selectedBrand === brand ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold shadow-sm border border-purple-100 whitespace-nowrap transition-all">
+                            class="px-4 py-1.5 rounded-full text-xs font-bold border border-purple-100 whitespace-nowrap transition-all shadow-sm">
                         {{ brand }}
                     </button>
                 </div>
             </div>
         </div>
 
-        <div v-if="loading" class="flex-1 flex flex-col items-center justify-center py-20 text-purple-500">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
-            <p class="text-sm font-medium">1,000+ 商品同步中...</p>
-        </div>
+        <main v-if="activeTab === 'home'" class="flex-1 animate-fadeIn">
+            <div class="px-4 py-4">
+                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-md relative border border-yellow-50">
+                    <div v-if="loadingBanners" class="absolute inset-0 flex items-center justify-center text-gray-400 text-xs">載入中...</div>
+                    <img v-for="b in banners" :key="b.id" :src="b.image" class="w-full h-full object-cover">
+                </div>
+            </div>
 
-        <div class="p-3 grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-4 gap-2 px-5 py-2 text-center">
+                <div v-for="(icon, idx) in ['🎁', '📱', '🎫', '☕']" :key="idx" class="flex flex-col items-center gap-1">
+                    <div class="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-xl shadow-sm border border-yellow-100">
+                        {{ icon }}
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Category</span>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="font-black text-lg text-gray-800 border-l-4 border-purple-600 pl-3 leading-none">人氣推薦</h2>
+                    <span @click="activeTab = 'products'" class="text-[10px] text-purple-500 font-bold bg-purple-50 px-2 py-1 rounded-full cursor-pointer">查看全部商品 ></span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div v-for="item in products.slice(0, 4)" :key="item.id" 
+                         class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
+                        <div class="relative aspect-square">
+                            <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10 shadow-sm">
+                                {{ item.points }}
+                            </div>
+                            <img :src="item.image" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3 text-[11px] font-bold text-gray-700 truncate bg-white">
+                            {{ item.name }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main v-if="activeTab === 'products'" class="flex-1 p-3 grid grid-cols-2 gap-3 animate-fadeIn">
             <div v-for="item in pagedProducts" :key="item.id" 
-                 class="bg-white rounded-2xl overflow-hidden border border-yellow-100 shadow-sm transition-all active:scale-95">
-                
+                 class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all">
                 <div class="relative aspect-square bg-gray-50">
                     <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-xs z-10 shadow-md">
                         {{ item.points }}
                     </div>
-                    <div v-if="item.state === '預購'" class="absolute top-2 right-2 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm z-10">
-                        預購
-                    </div>
                     <img :src="item.image" class="w-full h-full object-cover" loading="lazy" 
                          @error="item.image = 'https://via.placeholder.com/300?text=No+Image'">
                 </div>
-
-                <div class="p-3 bg-white">
+                <div class="p-3">
                     <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9 leading-tight">
                         {{ item.name }}
                     </h3>
                 </div>
             </div>
-        </div>
+            <div id="scroll-anchor" class="col-span-2 py-10 text-center text-xs text-gray-300 font-bold">
+                已經到底部了
+            </div>
+        </main>
 
-        <div id="scroll-anchor" class="py-10 text-center text-xs text-yellow-600/50 font-medium">
-            <span v-if="pagedProducts.length < filteredProducts.length">滑動顯示更多商品</span>
-            <span v-else-if="!loading">已顯示全部內容</span>
-        </div>
+        <main v-if="activeTab === 'news'" class="flex-1 p-6 animate-fadeIn">
+            <h1 class="text-2xl font-black mb-6 text-gray-800">最新消息</h1>
+            <div class="space-y-4">
+                <div class="bg-cream p-5 rounded-[2rem] border border-yellow-100 shadow-sm">
+                    <div class="text-[10px] font-bold text-purple-500 mb-1">MAY 2026</div>
+                    <div class="font-bold text-base text-gray-800">商城 PWA 功能全面升級！</div>
+                    <div class="text-xs text-gray-500 mt-2 leading-relaxed">
+                        我們現在支援離線查看與手機安裝功能。將此網頁「加入主畫面」，即可隨時掌握最新點數兌換資訊。
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                    <div class="text-[10px] font-bold text-gray-400 mb-1">SYSTEM UPDATE</div>
+                    <div class="font-bold text-base text-gray-800">試算表同步優化</div>
+                    <div class="text-xs text-gray-500 mt-2 leading-relaxed">
+                        商品資訊現已與 Google Sheets 即時聯動，價格與庫存狀態將更加準確。
+                    </div>
+                </div>
+            </div>
+        </main>
 
-        <div v-if="filteredProducts.length === 0 && !loading" class="flex-1 py-40 text-center">
-            <p class="text-gray-400">目前沒有符合搜尋的商品</p>
-        </div>
-
-        <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-16 shadow-[0_-2px_15px_rgba(0,0,0,0.03)]">
-            <button @click="resetFilters" class="flex flex-col items-center gap-1">
-                <span class="text-xl">🏠</span>
-                <span class="text-[10px] text-purple-600 font-bold">首頁</span>
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-cream/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-16 shadow-[0_-2px_15px_rgba(0,0,0,0.05)] z-[60]">
+            <button @click="activeTab = 'news'" :class="activeTab === 'news' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 transition-colors">
+                <span class="text-xl">🔔</span>
+                <span class="text-[9px] font-black uppercase">最新消息</span>
             </button>
-            <a href="https://line.me/ti/p/你的LINEID" target="_blank" class="flex flex-col items-center gap-1">
-                <span class="text-xl">💬</span>
-                <span class="text-[10px] text-gray-500 font-bold">詢問老闆</span>
-            </a>
-            <button class="flex flex-col items-center gap-1 opacity-30">
-                <span class="text-xl text-gray-300">⋯</span>
-                <span class="text-[10px] text-gray-300 font-bold">更多的</span>
+            <button @click="activeTab = 'home'" :class="activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 scale-110 transition-colors">
+                <span class="text-2xl">🏠</span>
+                <span class="text-[9px] font-black uppercase">首頁</span>
             </button>
-        </div>
+            <button @click="activeTab = 'products'" :class="activeTab === 'products' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 transition-colors">
+                <span class="text-xl">💎</span>
+                <span class="text-[9px] font-black uppercase">點數商品</span>
+            </button>
+        </nav>
 
     </div>
 
@@ -111,33 +161,47 @@
 
         createApp({
             setup() {
+                const activeTab = ref('home');
                 const products = ref([]);
+                const banners = ref([]);
                 const loading = ref(true);
+                const loadingBanners = ref(true);
                 const searchQuery = ref('');
                 const selectedBrand = ref('');
                 const currentPage = ref(1);
                 const pageSize = 40;
 
-                // 請填入您的 Google Sheets CSV 發佈連結
-                const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=0&single=true&output=csv';
+                // --- 已更新為您提供的 CSV 連結 ---
+                const productCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=0&single=true&output=csv';
+                const bannerCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=579891222&single=true&output=csv';
 
                 const fetchData = () => {
-                    Papa.parse(csvUrl, {
+                    // 抓取商品分頁 (products)
+                    Papa.parse(productCsvUrl, {
                         download: true,
                         header: true,
                         skipEmptyLines: true,
                         complete: (results) => {
-                            // 統一使用全小寫欄位名對應
                             products.value = results.data.map((row) => ({
                                 id: row.id,
                                 name: row.name,
                                 brand: row.brand,
                                 points: row.points, 
-                                state: row.state,
                                 online: row.online,
                                 image: row.image
-                            })).filter(p => p.name && p.online === '上架'); 
+                            })).filter(p => p.name && p.online === '上架');
                             loading.value = false;
+                        }
+                    });
+
+                    // 抓取海報分頁 (StartPage)
+                    Papa.parse(bannerCsvUrl, {
+                        download: true,
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (results) => {
+                            banners.value = results.data.filter(b => b.image);
+                            loadingBanners.value = false;
                         }
                     });
                 };
@@ -147,7 +211,7 @@
                     return [...new Set(b)];
                 });
 
-                const currentTitle = computed(() => selectedBrand.value || '所有商品');
+                const currentTitle = computed(() => selectedBrand.value || '點數商品');
 
                 const filteredProducts = computed(() => {
                     currentPage.value = 1;
@@ -163,12 +227,6 @@
                     return filteredProducts.value.slice(0, currentPage.value * pageSize);
                 });
 
-                const resetFilters = () => {
-                    searchQuery.value = '';
-                    selectedBrand.value = '';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                };
-
                 onMounted(() => {
                     fetchData();
                     const observer = new IntersectionObserver((entries) => {
@@ -181,7 +239,7 @@
                     observer.observe(document.getElementById('scroll-anchor'));
                 });
 
-                return { loading, searchQuery, selectedBrand, brands, filteredProducts, pagedProducts, currentTitle, resetFilters };
+                return { activeTab, loading, loadingBanners, products, banners, searchQuery, selectedBrand, brands, pagedProducts, currentTitle };
             }
         }).mount('#app');
     </script>
