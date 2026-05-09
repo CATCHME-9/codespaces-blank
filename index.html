@@ -5,14 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>嘉義航母 點數商城</title>
     
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#9333ea">
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-      }
-    </script>
-
+    <meta name="theme-color" content="#FFFFFF">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -22,53 +16,48 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
         body { background-color: #FFFFFF; color: #333; font-family: sans-serif; }
-        .bg-cream { background-color: #FFFBEB; }
+        .bg-cream-solid { background-color: #FFFBEB; }
         .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .nav-icon { width: 24px; height: 24px; object-fit: contain; }
-        
         .banner-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
         .banner-item { min-width: 100%; height: 100%; flex-shrink: 0; }
-        
-        /* 詳情頁彈出動畫 */
-        .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
-        .modal-enter-from, .modal-leave-to { opacity: 0; }
-        .modal-content-enter-active { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .modal-content-enter-from { transform: translateY(100%); }
     </style>
 </head>
 <body>
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-24">
 
-        <div v-if="activeTab !== 'news'" class="bg-white px-5 pt-6 pb-2 flex justify-between items-center">
-            <img src="https://i.postimg.cc/cJ7pYNnW/5000.png" class="h-10 w-10 object-contain">
-            <span class="text-lg font-black text-gray-800 tracking-widest">嘉義航母</span>
-        </div>
+        <!-- 第一點修正：最新消息頁面不顯示最上方那列 -->
+        <header v-if="activeTab !== 'detail' && activeTab !== 'news'" class="px-4 pt-6 pb-2 flex items-center gap-3 bg-white sticky top-0 z-50">
+            <button class="text-2xl text-gray-600">≡</button>
+            <div class="flex-1 relative">
+                <input v-model="searchQuery" type="text" placeholder="搜尋商品..." 
+                       @focus="activeTab = 'products'"
+                       class="w-full bg-gray-100 border-none rounded-xl px-4 py-2 pl-9 focus:ring-1 focus:ring-purple-400 outline-none text-sm">
+                <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
+            </div>
+            <img src="https://i.postimg.cc/cJ7pYNnW/5000.png" class="h-9 w-9 object-contain" @click="activeTab = 'home'">
+        </header>
 
+        <!-- 內容區：首頁 -->
         <main v-if="activeTab === 'home'" class="flex-1 animate-fadeIn">
             <div class="px-4 py-4">
-                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-sm border border-gray-50 relative group">
-                    <div v-if="loadingBanners" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">載入橫幅中...</div>
+                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-sm border border-gray-50 relative">
                     <div class="banner-container" :style="{ transform: `translateX(-${currentBannerIndex * 100}%)` }">
                         <div v-for="b in banners" :key="b.id" class="banner-item">
                             <img :src="b.image" class="w-full h-full object-cover">
                         </div>
                     </div>
-                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                        <div v-for="(_, index) in banners" :key="index" 
-                             class="h-1.5 rounded-full transition-all duration-300"
-                             :class="currentBannerIndex === index ? 'w-4 bg-purple-600' : 'w-1.5 bg-white/50'"></div>
-                    </div>
                 </div>
             </div>
 
             <div class="p-5">
-                <div class="flex justify-between items-end mb-4 px-1">
+                <div class="flex justify-between items-end mb-4">
                     <h2 class="font-black text-xl text-gray-800">精選推薦</h2>
-                    <span @click="activeTab = 'products'" class="text-xs text-purple-500 font-bold">查看更多</span>
+                    <span @click="activeTab = 'products'" class="text-xs text-purple-500 font-bold cursor-pointer">查看更多</span>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div v-for="item in products.slice(0, 6)" :key="item.id" @click="showDetail(item)" class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
+                    <div v-for="item in products.slice(0, 6)" :key="item.id" @click="goToDetail(item)" class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
                         <div class="relative aspect-square">
                             <div class="absolute top-3 left-3 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10">{{ item.points }}</div>
                             <img :src="item.image" class="w-full h-full object-cover">
@@ -79,41 +68,25 @@
             </div>
         </main>
 
-        <main v-if="activeTab === 'products'" class="flex-1 flex flex-col animate-fadeIn">
-            <div class="bg-white px-4 py-3 border-b border-gray-50">
-                <div class="relative mb-3">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋商品..." 
-                           class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 outline-none text-sm">
-                    <span class="absolute left-3 top-2.5 text-gray-300">🔍</span>
+        <!-- 內容區：商品列表 -->
+        <main v-if="activeTab === 'products'" class="flex-1 p-3 grid grid-cols-2 gap-3 animate-fadeIn">
+            <div v-for="item in pagedProducts" :key="item.id" @click="goToDetail(item)" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
+                <div class="relative aspect-square">
+                    <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10">{{ item.points }}</div>
+                    <img :src="item.image" class="w-full h-full object-cover" loading="lazy">
                 </div>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar">
-                    <button @click="selectedBrand = ''" 
-                            :class="selectedBrand === '' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all">全部</button>
-                    <button v-for="brand in brands" @click="selectedBrand = brand"
-                            :class="selectedBrand === brand ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all">{{ brand }}</button>
+                <div class="p-3">
+                    <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9">{{ item.name }}</h3>
                 </div>
             </div>
-            <div class="p-3 grid grid-cols-2 gap-3">
-                <div v-for="item in pagedProducts" :key="item.id" @click="showDetail(item)" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
-                    <div class="relative aspect-square">
-                        <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10">{{ item.points }}</div>
-                        <img :src="item.image" class="w-full h-full object-cover" loading="lazy">
-                    </div>
-                    <div class="p-3">
-                        <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9">{{ item.name }}</h3>
-                    </div>
-                </div>
-                <div id="scroll-anchor" class="col-span-2 py-10"></div>
-            </div>
+            <div id="scroll-anchor" class="col-span-2 py-10"></div>
         </main>
 
+        <!-- 內容區：最新消息 (已移除頂部 Header) -->
         <main v-if="activeTab === 'news'" class="flex-1 p-6 animate-fadeIn">
-            <h1 class="text-2xl font-black mb-6">最新消息</h1>
-            <div v-if="newsList.length === 0" class="text-center text-gray-400 py-10 text-sm">載入消息中...</div>
+            <h1 class="text-2xl font-black mb-6 mt-4">最新消息</h1>
             <div class="space-y-4">
-                <div v-for="news in newsList" :key="news.id" class="bg-cream p-5 rounded-[2rem] border border-yellow-100 shadow-sm">
+                <div v-for="news in newsList" :key="news.id" class="bg-cream-solid p-5 rounded-[2rem] border border-yellow-100">
                     <div class="text-[10px] font-bold text-purple-500 mb-1 uppercase">{{ news.date }}</div>
                     <div class="font-bold text-gray-800">{{ news.title }}</div>
                     <div class="text-xs text-gray-500 mt-2 leading-relaxed">{{ news.content }}</div>
@@ -121,44 +94,51 @@
             </div>
         </main>
 
-        <transition name="modal">
-            <div v-if="selectedProduct" class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="selectedProduct = null">
-                <transition name="modal-content" appear>
-                    <div class="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh]">
-                        <div class="relative aspect-square w-full">
-                            <button @click="selectedProduct = null" class="absolute top-5 right-5 z-10 bg-black/20 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md">✕</button>
-                            <img :src="selectedProduct.image" class="w-full h-full object-cover">
-                        </div>
-                        <div class="p-8 overflow-y-auto no-scrollbar">
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-xs font-black">{{ selectedProduct.points }}</span>
-                                <span class="text-xs text-gray-400 font-bold">ID: {{ selectedProduct.id }}</span>
-                            </div>
-                            <h2 class="text-xl font-black text-gray-800 mb-4">{{ selectedProduct.name }}</h2>
-                            <div class="space-y-4 text-sm text-gray-500 leading-relaxed">
-                                <div class="bg-gray-50 p-4 rounded-2xl">
-                                    <div class="font-bold text-gray-700 mb-1">兌換說明</div>
-                                    請至線下門市出示本頁面，由工作人員進行點數核銷後領取商品。
-                                </div>
-                            </div>
-                            <button @click="selectedProduct = null" class="w-full bg-purple-600 text-white font-black py-4 rounded-2xl mt-8 shadow-lg shadow-purple-200 active:scale-95 transition-all">關閉視窗</button>
-                        </div>
-                    </div>
-                </transition>
+        <!-- 詳情頁修正：第二、三、四點 (完全對照試算表欄位) -->
+        <main v-if="activeTab === 'detail'" class="flex-1 animate-fadeIn bg-white min-h-screen pb-10">
+            <div class="relative w-full aspect-square">
+                <button @click="activeTab = 'products'" class="absolute top-6 left-6 z-20 bg-white/90 w-10 h-10 rounded-full flex items-center justify-center shadow-md">←</button>
+                <img :src="selectedProduct.image" class="w-full h-full object-cover">
             </div>
-        </transition>
+            
+            <div class="p-6">
+                <h2 class="text-2xl font-black text-gray-800 mb-4">{{ selectedProduct.name }}</h2>
+                
+                <div class="space-y-3 border-t border-gray-100 pt-6">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">貨編</span><span class="font-bold text-gray-700">{{ selectedProduct.id }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">規格</span><span class="font-bold text-gray-700">{{ selectedProduct.format || '無規格' }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">點數</span><span class="font-bold text-purple-600">{{ selectedProduct.points }}</span></div>
+                    <!-- 第二點修正：新增彩票數 -->
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">彩票數</span><span class="font-bold text-blue-600">{{ selectedProduct.ticket }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">狀態</span><span class="font-bold" :class="selectedProduct.state === '現貨' ? 'text-green-500' : 'text-orange-500'">{{ selectedProduct.state }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">更新時間</span><span class="text-gray-500">{{ selectedProduct.renew }}</span></div>
+                </div>
 
-        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-cream/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-20 shadow-lg z-[60] pb-2">
+                <div class="mt-8">
+                    <h4 class="font-black text-gray-800 mb-3 text-lg">商品特色</h4>
+                    <p class="text-sm text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl">
+                        此為嘉義航母精選商品，細節請參考規格說明或點擊下方按鈕諮詢客服。
+                    </p>
+                </div>
+
+                <a href="https://lin.ee/ihnJs5x" target="_blank" class="block w-full bg-[#00b900] text-white text-center font-black py-4 rounded-2xl mt-8 shadow-lg active:scale-95 transition-all">
+                    詢問此商品
+                </a>
+            </div>
+        </main>
+
+        <!-- 底部導覽列 -->
+        <nav v-if="activeTab !== 'detail'" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-cream-solid border-t border-yellow-100 flex justify-around items-center h-20 z-[60] pb-2">
             <button @click="activeTab = 'news'" class="flex flex-col items-center gap-1">
-                <img src="https://i.postimg.cc/KjJB065w/new.png" class="nav-icon" :class="activeTab === 'news' ? 'opacity-100' : 'opacity-40'">
+                <img src="https://i.postimg.cc/KjJB065w/new.png" class="nav-icon" :class="activeTab === 'news' ? 'opacity-100' : 'opacity-30'">
                 <span class="text-[10px] font-bold" :class="activeTab === 'news' ? 'text-purple-600' : 'text-gray-400'">最新消息</span>
             </button>
             <button @click="activeTab = 'home'" class="flex flex-col items-center gap-1">
-                <img src="https://i.postimg.cc/3NnmtsBM/home.png" class="nav-icon" :class="activeTab === 'home' ? 'opacity-100' : 'opacity-40'">
+                <img src="https://i.postimg.cc/3NnmtsBM/home.png" class="nav-icon" :class="activeTab === 'home' ? 'opacity-100' : 'opacity-30'">
                 <span class="text-[10px] font-bold" :class="activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'">首頁</span>
             </button>
             <button @click="activeTab = 'products'" class="flex flex-col items-center gap-1">
-                <img src="https://i.postimg.cc/0jcDVTfs/p.png" class="nav-icon" :class="activeTab === 'products' ? 'opacity-100' : 'opacity-40'">
+                <img src="https://i.postimg.cc/0jcDVTfs/p.png" class="nav-icon" :class="activeTab === 'products' ? 'opacity-100' : 'opacity-30'">
                 <span class="text-[10px] font-bold" :class="activeTab === 'products' ? 'text-purple-600' : 'text-gray-400'">點數兌換</span>
             </button>
         </nav>
@@ -172,12 +152,9 @@
                 const products = ref([]);
                 const banners = ref([]);
                 const newsList = ref([]);
-                const selectedProduct = ref(null); // 新增：被選中的商品
+                const selectedProduct = ref(null);
                 const currentBannerIndex = ref(0);
-                const loading = ref(true);
-                const loadingBanners = ref(true);
                 const searchQuery = ref('');
-                const selectedBrand = ref('');
                 const currentPage = ref(1);
                 const pageSize = 40;
 
@@ -186,22 +163,27 @@
                 const newsCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=497054949&single=true&output=csv';
 
                 const fetchData = () => {
-                    Papa.parse(productCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { products.value = res.data.filter(p => p.online === '上架'); loading.value = false; } });
-                    Papa.parse(bannerCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { banners.value = res.data.filter(b => b.image); loadingBanners.value = false; startBannerTimer(); } });
-                    Papa.parse(newsCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { newsList.value = res.data; } });
+                    Papa.parse(productCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { 
+                        products.value = res.data.filter(p => p.online === '上架'); 
+                    }});
+                    Papa.parse(bannerCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { 
+                        banners.value = res.data.filter(b => b.image); startBannerTimer(); 
+                    }});
+                    Papa.parse(newsCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { 
+                        newsList.value = res.data; 
+                    }});
                 };
 
                 const startBannerTimer = () => { setInterval(() => { if (banners.value.length > 0) currentBannerIndex.value = (currentBannerIndex.value + 1) % banners.value.length; }, 3000); };
                 
-                const showDetail = (item) => { selectedProduct.value = item; };
+                const goToDetail = (item) => { 
+                    selectedProduct.value = item; 
+                    activeTab.value = 'detail';
+                    window.scrollTo(0,0);
+                };
 
-                const brands = computed(() => [...new Set(products.value.map(p => p.brand).filter(x => x))]);
                 const filteredProducts = computed(() => {
-                    return products.value.filter(p => {
-                        const mSearch = p.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
-                        const mBrand = selectedBrand.value === '' || p.brand === selectedBrand.value;
-                        return mSearch && mBrand;
-                    });
+                    return products.value.filter(p => p.name?.toLowerCase().includes(searchQuery.value.toLowerCase()));
                 });
                 const pagedProducts = computed(() => filteredProducts.value.slice(0, currentPage.value * pageSize));
 
@@ -210,10 +192,11 @@
                     const observer = new IntersectionObserver((entries) => {
                         if (entries[0].isIntersecting && pagedProducts.value.length < filteredProducts.value.length) currentPage.value++;
                     });
-                    observer.observe(document.getElementById('scroll-anchor'));
+                    const anchor = document.getElementById('scroll-anchor');
+                    if(anchor) observer.observe(anchor);
                 });
 
-                return { activeTab, loading, loadingBanners, products, banners, newsList, selectedProduct, currentBannerIndex, searchQuery, selectedBrand, brands, pagedProducts, showDetail };
+                return { activeTab, products, banners, newsList, selectedProduct, currentBannerIndex, searchQuery, pagedProducts, goToDetail };
             }
         }).mount('#app');
     </script>
