@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>點數商城 PWA</title>
+    <title>嘉義航母 點數商城</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#9333ea">
@@ -21,149 +21,159 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-        /* 配色設定 */
         body { background-color: #FFFFFF; color: #333; font-family: sans-serif; }
-        .bg-cream { background-color: #FFFBEB; } /* 淡鵝黃色 */
-        .text-accent { color: #9333ea; } /* 紫色 */
+        .bg-cream { background-color: #FFFBEB; }
         .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-icon { width: 24px; height: 24px; object-fit: contain; }
+        
+        .banner-container { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
+        .banner-item { min-width: 100%; height: 100%; flex-shrink: 0; }
+        
+        /* 詳情頁彈出動畫 */
+        .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; }
+        .modal-content-enter-active { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal-content-enter-from { transform: translateY(100%); }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-20">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-24">
 
-        <div v-if="activeTab !== 'news'" class="sticky top-0 bg-cream/95 backdrop-blur-md z-50 pt-4 border-b border-yellow-100 shadow-sm">
-            <div class="flex justify-between items-center px-5 mb-2">
-                <h1 class="text-xl font-black text-accent tracking-tighter">{{ activeTab === 'home' ? '點數商城' : currentTitle }}</h1>
-                <div class="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-[10px]">MALL</div>
-            </div>
-
-            <div v-if="activeTab === 'products'" class="px-4 pb-4 animate-fadeIn">
-                <div class="relative mb-3">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋商品名稱或品牌..." 
-                           class="w-full bg-white border border-yellow-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-sm">
-                    <span class="absolute left-3 top-3 text-gray-300">🔍</span>
-                </div>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar">
-                    <button @click="selectedBrand = ''" 
-                            :class="selectedBrand === '' ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold border border-purple-100 whitespace-nowrap transition-all shadow-sm">
-                        全部
-                    </button>
-                    <button v-for="brand in brands" @click="selectedBrand = brand"
-                            :class="selectedBrand === brand ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'"
-                            class="px-4 py-1.5 rounded-full text-xs font-bold border border-purple-100 whitespace-nowrap transition-all shadow-sm">
-                        {{ brand }}
-                    </button>
-                </div>
-            </div>
+        <div v-if="activeTab !== 'news'" class="bg-white px-5 pt-6 pb-2 flex justify-between items-center">
+            <img src="https://i.postimg.cc/cJ7pYNnW/5000.png" class="h-10 w-10 object-contain">
+            <span class="text-lg font-black text-gray-800 tracking-widest">嘉義航母</span>
         </div>
 
         <main v-if="activeTab === 'home'" class="flex-1 animate-fadeIn">
             <div class="px-4 py-4">
-                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-md relative border border-yellow-50">
-                    <div v-if="loadingBanners" class="absolute inset-0 flex items-center justify-center text-gray-400 text-xs">載入中...</div>
-                    <img v-for="b in banners" :key="b.id" :src="b.image" class="w-full h-full object-cover">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-4 gap-2 px-5 py-2 text-center">
-                <div v-for="(icon, idx) in ['🎁', '📱', '🎫', '☕']" :key="idx" class="flex flex-col items-center gap-1">
-                    <div class="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center text-xl shadow-sm border border-yellow-100">
-                        {{ icon }}
+                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-sm border border-gray-50 relative group">
+                    <div v-if="loadingBanners" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">載入橫幅中...</div>
+                    <div class="banner-container" :style="{ transform: `translateX(-${currentBannerIndex * 100}%)` }">
+                        <div v-for="b in banners" :key="b.id" class="banner-item">
+                            <img :src="b.image" class="w-full h-full object-cover">
+                        </div>
                     </div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">Category</span>
+                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        <div v-for="(_, index) in banners" :key="index" 
+                             class="h-1.5 rounded-full transition-all duration-300"
+                             :class="currentBannerIndex === index ? 'w-4 bg-purple-600' : 'w-1.5 bg-white/50'"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="p-5">
-                <div class="flex justify-between items-end mb-4">
-                    <h2 class="font-black text-lg text-gray-800 border-l-4 border-purple-600 pl-3 leading-none">人氣推薦</h2>
-                    <span @click="activeTab = 'products'" class="text-[10px] text-purple-500 font-bold bg-purple-50 px-2 py-1 rounded-full cursor-pointer">查看全部商品 ></span>
+                <div class="flex justify-between items-end mb-4 px-1">
+                    <h2 class="font-black text-xl text-gray-800">精選推薦</h2>
+                    <span @click="activeTab = 'products'" class="text-xs text-purple-500 font-bold">查看更多</span>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div v-for="item in products.slice(0, 4)" :key="item.id" 
-                         class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
+                    <div v-for="item in products.slice(0, 6)" :key="item.id" @click="showDetail(item)" class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
                         <div class="relative aspect-square">
-                            <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10 shadow-sm">
-                                {{ item.points }}
-                            </div>
+                            <div class="absolute top-3 left-3 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10">{{ item.points }}</div>
                             <img :src="item.image" class="w-full h-full object-cover">
                         </div>
-                        <div class="p-3 text-[11px] font-bold text-gray-700 truncate bg-white">
-                            {{ item.name }}
-                        </div>
+                        <div class="p-3 text-xs font-bold text-gray-700 truncate">{{ item.name }}</div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <main v-if="activeTab === 'products'" class="flex-1 p-3 grid grid-cols-2 gap-3 animate-fadeIn">
-            <div v-for="item in pagedProducts" :key="item.id" 
-                 class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all">
-                <div class="relative aspect-square bg-gray-50">
-                    <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-xs z-10 shadow-md">
-                        {{ item.points }}
-                    </div>
-                    <img :src="item.image" class="w-full h-full object-cover" loading="lazy" 
-                         @error="item.image = 'https://via.placeholder.com/300?text=No+Image'">
+        <main v-if="activeTab === 'products'" class="flex-1 flex flex-col animate-fadeIn">
+            <div class="bg-white px-4 py-3 border-b border-gray-50">
+                <div class="relative mb-3">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋商品..." 
+                           class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 pl-10 focus:ring-2 focus:ring-purple-500 outline-none text-sm">
+                    <span class="absolute left-3 top-2.5 text-gray-300">🔍</span>
                 </div>
-                <div class="p-3">
-                    <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9 leading-tight">
-                        {{ item.name }}
-                    </h3>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                    <button @click="selectedBrand = ''" 
+                            :class="selectedBrand === '' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'"
+                            class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all">全部</button>
+                    <button v-for="brand in brands" @click="selectedBrand = brand"
+                            :class="selectedBrand === brand ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'"
+                            class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all">{{ brand }}</button>
                 </div>
             </div>
-            <div id="scroll-anchor" class="col-span-2 py-10 text-center text-xs text-gray-300 font-bold">
-                已經到底部了
+            <div class="p-3 grid grid-cols-2 gap-3">
+                <div v-for="item in pagedProducts" :key="item.id" @click="showDetail(item)" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
+                    <div class="relative aspect-square">
+                        <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-0.5 rounded-lg font-bold text-[10px] z-10">{{ item.points }}</div>
+                        <img :src="item.image" class="w-full h-full object-cover" loading="lazy">
+                    </div>
+                    <div class="p-3">
+                        <h3 class="text-xs font-bold text-gray-700 line-clamp-2 h-9">{{ item.name }}</h3>
+                    </div>
+                </div>
+                <div id="scroll-anchor" class="col-span-2 py-10"></div>
             </div>
         </main>
 
         <main v-if="activeTab === 'news'" class="flex-1 p-6 animate-fadeIn">
-            <h1 class="text-2xl font-black mb-6 text-gray-800">最新消息</h1>
+            <h1 class="text-2xl font-black mb-6">最新消息</h1>
+            <div v-if="newsList.length === 0" class="text-center text-gray-400 py-10 text-sm">載入消息中...</div>
             <div class="space-y-4">
-                <div class="bg-cream p-5 rounded-[2rem] border border-yellow-100 shadow-sm">
-                    <div class="text-[10px] font-bold text-purple-500 mb-1">MAY 2026</div>
-                    <div class="font-bold text-base text-gray-800">商城 PWA 功能全面升級！</div>
-                    <div class="text-xs text-gray-500 mt-2 leading-relaxed">
-                        我們現在支援離線查看與手機安裝功能。將此網頁「加入主畫面」，即可隨時掌握最新點數兌換資訊。
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
-                    <div class="text-[10px] font-bold text-gray-400 mb-1">SYSTEM UPDATE</div>
-                    <div class="font-bold text-base text-gray-800">試算表同步優化</div>
-                    <div class="text-xs text-gray-500 mt-2 leading-relaxed">
-                        商品資訊現已與 Google Sheets 即時聯動，價格與庫存狀態將更加準確。
-                    </div>
+                <div v-for="news in newsList" :key="news.id" class="bg-cream p-5 rounded-[2rem] border border-yellow-100 shadow-sm">
+                    <div class="text-[10px] font-bold text-purple-500 mb-1 uppercase">{{ news.date }}</div>
+                    <div class="font-bold text-gray-800">{{ news.title }}</div>
+                    <div class="text-xs text-gray-500 mt-2 leading-relaxed">{{ news.content }}</div>
                 </div>
             </div>
         </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-cream/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-16 shadow-[0_-2px_15px_rgba(0,0,0,0.05)] z-[60]">
-            <button @click="activeTab = 'news'" :class="activeTab === 'news' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 transition-colors">
-                <span class="text-xl">🔔</span>
-                <span class="text-[9px] font-black uppercase">最新消息</span>
+        <transition name="modal">
+            <div v-if="selectedProduct" class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="selectedProduct = null">
+                <transition name="modal-content" appear>
+                    <div class="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh]">
+                        <div class="relative aspect-square w-full">
+                            <button @click="selectedProduct = null" class="absolute top-5 right-5 z-10 bg-black/20 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md">✕</button>
+                            <img :src="selectedProduct.image" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-8 overflow-y-auto no-scrollbar">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-xs font-black">{{ selectedProduct.points }}</span>
+                                <span class="text-xs text-gray-400 font-bold">ID: {{ selectedProduct.id }}</span>
+                            </div>
+                            <h2 class="text-xl font-black text-gray-800 mb-4">{{ selectedProduct.name }}</h2>
+                            <div class="space-y-4 text-sm text-gray-500 leading-relaxed">
+                                <div class="bg-gray-50 p-4 rounded-2xl">
+                                    <div class="font-bold text-gray-700 mb-1">兌換說明</div>
+                                    請至線下門市出示本頁面，由工作人員進行點數核銷後領取商品。
+                                </div>
+                            </div>
+                            <button @click="selectedProduct = null" class="w-full bg-purple-600 text-white font-black py-4 rounded-2xl mt-8 shadow-lg shadow-purple-200 active:scale-95 transition-all">關閉視窗</button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
+
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-cream/95 backdrop-blur-md border-t border-yellow-100 flex justify-around items-center h-20 shadow-lg z-[60] pb-2">
+            <button @click="activeTab = 'news'" class="flex flex-col items-center gap-1">
+                <img src="https://i.postimg.cc/KjJB065w/new.png" class="nav-icon" :class="activeTab === 'news' ? 'opacity-100' : 'opacity-40'">
+                <span class="text-[10px] font-bold" :class="activeTab === 'news' ? 'text-purple-600' : 'text-gray-400'">最新消息</span>
             </button>
-            <button @click="activeTab = 'home'" :class="activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 scale-110 transition-colors">
-                <span class="text-2xl">🏠</span>
-                <span class="text-[9px] font-black uppercase">首頁</span>
+            <button @click="activeTab = 'home'" class="flex flex-col items-center gap-1">
+                <img src="https://i.postimg.cc/3NnmtsBM/home.png" class="nav-icon" :class="activeTab === 'home' ? 'opacity-100' : 'opacity-40'">
+                <span class="text-[10px] font-bold" :class="activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'">首頁</span>
             </button>
-            <button @click="activeTab = 'products'" :class="activeTab === 'products' ? 'text-purple-600' : 'text-gray-400'" class="flex flex-col items-center gap-0.5 transition-colors">
-                <span class="text-xl">💎</span>
-                <span class="text-[9px] font-black uppercase">點數商品</span>
+            <button @click="activeTab = 'products'" class="flex flex-col items-center gap-1">
+                <img src="https://i.postimg.cc/0jcDVTfs/p.png" class="nav-icon" :class="activeTab === 'products' ? 'opacity-100' : 'opacity-40'">
+                <span class="text-[10px] font-bold" :class="activeTab === 'products' ? 'text-purple-600' : 'text-gray-400'">點數兌換</span>
             </button>
         </nav>
-
     </div>
 
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
-
         createApp({
             setup() {
                 const activeTab = ref('home');
                 const products = ref([]);
                 const banners = ref([]);
+                const newsList = ref([]);
+                const selectedProduct = ref(null); // 新增：被選中的商品
+                const currentBannerIndex = ref(0);
                 const loading = ref(true);
                 const loadingBanners = ref(true);
                 const searchQuery = ref('');
@@ -171,75 +181,39 @@
                 const currentPage = ref(1);
                 const pageSize = 40;
 
-                // --- 已更新為您提供的 CSV 連結 ---
                 const productCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=0&single=true&output=csv';
                 const bannerCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=579891222&single=true&output=csv';
+                const newsCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRaCmPmWqKSMxONY0FKseAXc3cqUEHmr7ErrspEHKTQ7qJ-G_ajJjjgMF3HLpaARa0Q89xBXytjo3x3/pub?gid=497054949&single=true&output=csv';
 
                 const fetchData = () => {
-                    // 抓取商品分頁 (products)
-                    Papa.parse(productCsvUrl, {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: (results) => {
-                            products.value = results.data.map((row) => ({
-                                id: row.id,
-                                name: row.name,
-                                brand: row.brand,
-                                points: row.points, 
-                                online: row.online,
-                                image: row.image
-                            })).filter(p => p.name && p.online === '上架');
-                            loading.value = false;
-                        }
-                    });
-
-                    // 抓取海報分頁 (StartPage)
-                    Papa.parse(bannerCsvUrl, {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: (results) => {
-                            banners.value = results.data.filter(b => b.image);
-                            loadingBanners.value = false;
-                        }
-                    });
+                    Papa.parse(productCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { products.value = res.data.filter(p => p.online === '上架'); loading.value = false; } });
+                    Papa.parse(bannerCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { banners.value = res.data.filter(b => b.image); loadingBanners.value = false; startBannerTimer(); } });
+                    Papa.parse(newsCsvUrl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { newsList.value = res.data; } });
                 };
 
-                const brands = computed(() => {
-                    const b = products.value.map(p => p.brand).filter(x => x);
-                    return [...new Set(b)];
-                });
+                const startBannerTimer = () => { setInterval(() => { if (banners.value.length > 0) currentBannerIndex.value = (currentBannerIndex.value + 1) % banners.value.length; }, 3000); };
+                
+                const showDetail = (item) => { selectedProduct.value = item; };
 
-                const currentTitle = computed(() => selectedBrand.value || '點數商品');
-
+                const brands = computed(() => [...new Set(products.value.map(p => p.brand).filter(x => x))]);
                 const filteredProducts = computed(() => {
-                    currentPage.value = 1;
                     return products.value.filter(p => {
-                        const s = searchQuery.value.toLowerCase();
-                        const mSearch = p.name?.toLowerCase().includes(s) || p.brand?.toLowerCase().includes(s);
+                        const mSearch = p.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
                         const mBrand = selectedBrand.value === '' || p.brand === selectedBrand.value;
                         return mSearch && mBrand;
                     });
                 });
-
-                const pagedProducts = computed(() => {
-                    return filteredProducts.value.slice(0, currentPage.value * pageSize);
-                });
+                const pagedProducts = computed(() => filteredProducts.value.slice(0, currentPage.value * pageSize));
 
                 onMounted(() => {
                     fetchData();
                     const observer = new IntersectionObserver((entries) => {
-                        if (entries[0].isIntersecting && !loading.value) {
-                            if (pagedProducts.value.length < filteredProducts.value.length) {
-                                currentPage.value++;
-                            }
-                        }
+                        if (entries[0].isIntersecting && pagedProducts.value.length < filteredProducts.value.length) currentPage.value++;
                     });
                     observer.observe(document.getElementById('scroll-anchor'));
                 });
 
-                return { activeTab, loading, loadingBanners, products, banners, searchQuery, selectedBrand, brands, pagedProducts, currentTitle };
+                return { activeTab, loading, loadingBanners, products, banners, newsList, selectedProduct, currentBannerIndex, searchQuery, selectedBrand, brands, pagedProducts, showDetail };
             }
         }).mount('#app');
     </script>
