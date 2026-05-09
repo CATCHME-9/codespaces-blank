@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>嘉義航母 點數商城</title>
     
+    <!-- PWA 與 iOS 優化 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7pYNnW/5000.png">
     <meta name="theme-color" content="#FFFFFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -15,7 +20,8 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-        body { background-color: #FFFFFF; color: #333; font-family: sans-serif; }
+        body { background-color: #FFFFFF; color: #333; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* 導覽列顏色：實心淡鵝黃色 */
         .bg-cream-solid { background-color: #FFFBEB; }
         .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -27,7 +33,7 @@
 <body>
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-24">
 
-        <!-- 第一點修正：最新消息頁面不顯示最上方那列 -->
+        <!-- 頂部 Header：最新消息頁面與詳情頁會隱藏此列 -->
         <header v-if="activeTab !== 'detail' && activeTab !== 'news'" class="px-4 pt-6 pb-2 flex items-center gap-3 bg-white sticky top-0 z-50">
             <button class="text-2xl text-gray-600">≡</button>
             <div class="flex-1 relative">
@@ -68,7 +74,7 @@
             </div>
         </main>
 
-        <!-- 內容區：商品列表 -->
+        <!-- 內容區：點數兌換列表 -->
         <main v-if="activeTab === 'products'" class="flex-1 p-3 grid grid-cols-2 gap-3 animate-fadeIn">
             <div v-for="item in pagedProducts" :key="item.id" @click="goToDetail(item)" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-transform">
                 <div class="relative aspect-square">
@@ -82,7 +88,7 @@
             <div id="scroll-anchor" class="col-span-2 py-10"></div>
         </main>
 
-        <!-- 內容區：最新消息 (已移除頂部 Header) -->
+        <!-- 內容區：最新消息 (無頂部導覽列) -->
         <main v-if="activeTab === 'news'" class="flex-1 p-6 animate-fadeIn">
             <h1 class="text-2xl font-black mb-6 mt-4">最新消息</h1>
             <div class="space-y-4">
@@ -94,7 +100,7 @@
             </div>
         </main>
 
-        <!-- 詳情頁修正：第二、三、四點 (完全對照試算表欄位) -->
+        <!-- 商品詳情頁 (完全對應試算表欄位) -->
         <main v-if="activeTab === 'detail'" class="flex-1 animate-fadeIn bg-white min-h-screen pb-10">
             <div class="relative w-full aspect-square">
                 <button @click="activeTab = 'products'" class="absolute top-6 left-6 z-20 bg-white/90 w-10 h-10 rounded-full flex items-center justify-center shadow-md">←</button>
@@ -108,7 +114,6 @@
                     <div class="flex justify-between text-sm"><span class="text-gray-400">貨編</span><span class="font-bold text-gray-700">{{ selectedProduct.id }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-400">規格</span><span class="font-bold text-gray-700">{{ selectedProduct.format || '無規格' }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-400">點數</span><span class="font-bold text-purple-600">{{ selectedProduct.points }}</span></div>
-                    <!-- 第二點修正：新增彩票數 -->
                     <div class="flex justify-between text-sm"><span class="text-gray-400">彩票數</span><span class="font-bold text-blue-600">{{ selectedProduct.ticket }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-400">狀態</span><span class="font-bold" :class="selectedProduct.state === '現貨' ? 'text-green-500' : 'text-orange-500'">{{ selectedProduct.state }}</span></div>
                     <div class="flex justify-between text-sm"><span class="text-gray-400">更新時間</span><span class="text-gray-500">{{ selectedProduct.renew }}</span></div>
@@ -117,10 +122,11 @@
                 <div class="mt-8">
                     <h4 class="font-black text-gray-800 mb-3 text-lg">商品特色</h4>
                     <p class="text-sm text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl">
-                        此為嘉義航母精選商品，細節請參考規格說明或點擊下方按鈕諮詢客服。
+                        嘉義航母嚴選商品。兌換請至門市現場，出示此頁面由人員核銷。詳情可點擊下方按鈕諮詢客服。
                     </p>
                 </div>
 
+                <!-- LINE 客服連結 -->
                 <a href="https://lin.ee/ihnJs5x" target="_blank" class="block w-full bg-[#00b900] text-white text-center font-black py-4 rounded-2xl mt-8 shadow-lg active:scale-95 transition-all">
                     詢問此商品
                 </a>
