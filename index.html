@@ -47,15 +47,15 @@
 
         <!-- 內容區：首頁 -->
         <main v-if="activeTab === 'home'" class="flex-1 animate-fadeIn">
-            <div class="px-4 py-4">
-                <div class="w-full aspect-[16/9] bg-gray-50 rounded-[2rem] overflow-hidden shadow-sm border border-gray-50 relative">
-                    <div class="banner-container" :style="{ transform: `translateX(-${currentBannerIndex * 100}%)` }">
-                        <div v-for="b in banners" :key="b.id" class="banner-item">
-                            <img :src="b.image" class="w-full h-full object-contain bg-white">
-                        </div>
-                    </div>
+    <div class="px-4 py-4">
+        <div class="w-full aspect-[4/3] bg-gray-50 rounded-[2rem] overflow-hidden shadow-sm border border-gray-50 relative">
+            <div class="banner-container" :style="{ transform: `translateX(-${currentBannerIndex * 100}%)` }">
+                <div v-for="b in banners" :key="b.id" class="banner-item">
+                    <img :src="b.image" class="w-full h-full object-cover">
                 </div>
             </div>
+        </div>
+    </div>
 
             <div class="p-5">
                 <div class="flex justify-between items-end mb-4">
